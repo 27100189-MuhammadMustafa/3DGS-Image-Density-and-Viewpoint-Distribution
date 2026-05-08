@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 	<head>
-		<title>WebGL Gaussian Splat Viewer</title>
+		<title>3DGS Ablation Study Viewer</title>
 		<meta charset="utf-8" />
 		<meta
 			name="viewport"
@@ -87,30 +87,15 @@
 			@keyframes rotation {
 				0% {
 					transform: rotateX(45deg) rotateY(0) rotateZ(45deg);
-					animation-timing-function: cubic-bezier(
-						0.17,
-						0.84,
-						0.44,
-						1
-					);
+					animation-timing-function: cubic-bezier(0.17, 0.84, 0.44, 1);
 				}
 				50% {
 					transform: rotateX(45deg) rotateY(0) rotateZ(225deg);
-					animation-timing-function: cubic-bezier(
-						0.76,
-						0.05,
-						0.86,
-						0.06
-					);
+					animation-timing-function: cubic-bezier(0.76, 0.05, 0.86, 0.06);
 				}
 				100% {
 					transform: rotateX(45deg) rotateY(0) rotateZ(405deg);
-					animation-timing-function: cubic-bezier(
-						0.17,
-						0.84,
-						0.44,
-						1
-					);
+					animation-timing-function: cubic-bezier(0.17, 0.84, 0.44, 1);
 				}
 			}
 
@@ -137,7 +122,6 @@
 
 			details {
 				font-size: small;
-
 			}
 
 			#progress {
@@ -185,6 +169,65 @@
 			body.nohf #progress, body.nohf .cube-face {
 				background: #ff9d0d;
 			}
+
+			/* ── Scene Selector Panel ── */
+			#scene-panel {
+				position: absolute;
+				bottom: 20px;
+				left: 50%;
+				transform: translateX(-50%);
+				z-index: 999;
+				background: rgba(0, 0, 0, 0.72);
+				border: 1px solid rgba(255,255,255,0.15);
+				border-radius: 12px;
+				padding: 12px 18px;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				gap: 8px;
+				backdrop-filter: blur(6px);
+				min-width: 320px;
+			}
+			#scene-panel label {
+				font-size: 11px;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+				color: rgba(255,255,255,0.55);
+				margin-bottom: 2px;
+			}
+			#scene-select {
+				background: rgba(255,255,255,0.1);
+				color: white;
+				border: 1px solid rgba(255,255,255,0.25);
+				border-radius: 7px;
+				padding: 7px 12px;
+				font-size: 13px;
+				cursor: pointer;
+				width: 100%;
+				outline: none;
+				appearance: none;
+				-webkit-appearance: none;
+				background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='white' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+				background-repeat: no-repeat;
+				background-position: right 10px center;
+				padding-right: 28px;
+			}
+			#scene-select:hover {
+				background-color: rgba(255,255,255,0.18);
+			}
+			#scene-select option {
+				background: #1a1a2e;
+				color: white;
+			}
+			#scene-badge {
+				font-size: 11px;
+				color: rgba(255,255,255,0.45);
+				text-align: center;
+			}
+			#scene-badge span {
+				color: rgba(100,180,255,0.9);
+				font-weight: bold;
+			}
 		</style>
 	</head>
 	<body>
@@ -192,20 +235,16 @@
 			if(location.host.includes('hf.space')) document.body.classList.add('nohf');
 		</script>
 		<div id="info">
-			<h3 class="nohf">WebGL 3D Gaussian Splat Viewer</h3>
+			<h3 class="nohf">3DGS Ablation Study — Garden Scene</h3>
 			<p>
-			<small class="nohf">
-				By <a href="https://twitter.com/antimatter15">Kevin Kwok</a>.
-				Code on
-				<a href="https://github.com/antimatter15/splat">Github</a
-				>.
-			</small>
-		</p>
-
+				<small class="nohf">
+					Viewer by <a href="https://twitter.com/antimatter15">Kevin Kwok</a>.
+					Code on <a href="https://github.com/antimatter15/splat">Github</a>.
+				</small>
+			</p>
 			<details>
-			<summary>Use mouse or arrow keys to navigate.</summary>
-
-<div id="instructions">movement (arrow keys)
+				<summary>Use mouse or arrow keys to navigate.</summary>
+				<div id="instructions">movement (arrow keys)
 - left/right arrow keys to strafe side to side
 - up/down arrow keys to move forward/back
 - space to jump
@@ -237,19 +276,17 @@ gamepad
 
 other
 - press 0-9 to switch to one of the pre-loaded camera views
-- press '-' or '+'key to cycle loaded cameras
+- press '-' or '+' key to cycle loaded cameras
 - press p to resume default animation
 - drag and drop .ply file to convert to .splat
 - drag and drop cameras.json to load cameras
-</div>
-
-		</details>
-			
+				</div>
+			</details>
 		</div>
 
 		<div id="progress"></div>
-
 		<div id="message"></div>
+
 		<div class="scene" id="spinner">
 			<div class="cube-wrapper">
 				<div class="cube">
@@ -264,6 +301,7 @@ other
 				</div>
 			</div>
 		</div>
+
 		<canvas id="canvas"></canvas>
 
 		<div id="quality">
@@ -272,6 +310,79 @@ other
 		<div id="caminfo">
 			<span id="camid"></span>
 		</div>
+
+		<!-- ── Scene Selector ── -->
+		<div id="scene-panel">
+			<label>Select Training Condition</label>
+			<select id="scene-select">
+				<option value="https://huggingface.co/datasets/Jokekiller/3dgs-garden-scenes/resolve/main/garden_100pct_baseline.splat">
+					Garden — 100% Baseline (all views)
+				</option>
+				<option value="https://huggingface.co/datasets/Jokekiller/3dgs-garden-scenes/resolve/main/garden_75pct_uniform.splat">
+					Garden — 75% Uniform subsampling
+				</option>
+				<option value="https://huggingface.co/datasets/Jokekiller/3dgs-garden-scenes/resolve/main/garden_50pct_uniform.splat">
+					Garden — 50% Uniform subsampling
+				</option>
+				<option value="https://huggingface.co/datasets/Jokekiller/3dgs-garden-scenes/resolve/main/garden_25pct_uniform.splat">
+					Garden — 25% Uniform subsampling
+				</option>
+				<option value="https://huggingface.co/datasets/Jokekiller/3dgs-garden-scenes/resolve/main/garden_50pct_clustered_front.splat">
+					Garden — 50% Clustered Front (+X hemisphere)
+				</option>
+				<option value="https://huggingface.co/datasets/Jokekiller/3dgs-garden-scenes/resolve/main/garden_50pct_clustered_back.splat">
+					Garden — 50% Clustered Back (−X hemisphere)
+				</option>
+			</select>
+			<div id="scene-badge">Loading: <span id="scene-name">100% Baseline</span></div>
+		</div>
+
 		<script src="main.js"></script>
+
+		<script>
+			// Scene names for the badge display
+			const sceneLabels = {
+				"garden_100pct_baseline.splat":       "100% Baseline",
+				"garden_75pct_uniform.splat":         "75% Uniform",
+				"garden_50pct_uniform.splat":         "50% Uniform",
+				"garden_25pct_uniform.splat":         "25% Uniform",
+				"garden_50pct_clustered_front.splat": "50% Clustered Front",
+				"garden_50pct_clustered_back.splat":  "50% Clustered Back",
+			};
+
+			const select   = document.getElementById("scene-select");
+			const badge    = document.getElementById("scene-name");
+
+			function getFilename(url) {
+				return url.split("/").pop();
+			}
+
+			// Set the hash to the chosen URL so main.js picks it up, then reload
+			select.addEventListener("change", () => {
+				const url = select.value;
+				const filename = getFilename(url);
+				badge.textContent = sceneLabels[filename] || filename;
+				// antimatter15/splat reads the scene URL from location.hash
+				location.hash = encodeURIComponent(url);
+				location.reload();
+			});
+
+			// On page load, sync the dropdown to whatever is in the hash
+			window.addEventListener("load", () => {
+				const hash = location.hash ? decodeURIComponent(location.hash.substring(1)) : "";
+				if (hash) {
+					// Find the matching option and select it
+					for (let opt of select.options) {
+						if (opt.value === hash) {
+							opt.selected = true;
+							break;
+						}
+					}
+				}
+				// Update badge to match selected option
+				const filename = getFilename(select.value);
+				badge.textContent = sceneLabels[filename] || filename;
+			});
+		</script>
 	</body>
 </html>
