@@ -357,23 +357,24 @@ other
 				return url.split("/").pop();
 			}
 
-			// Set the hash to the chosen URL so main.js picks it up, then reload
+			// main.js reads scene URL from ?url= query param
 			select.addEventListener("change", () => {
 				const url = select.value;
 				const filename = getFilename(url);
 				badge.textContent = sceneLabels[filename] || filename;
-				// antimatter15/splat reads the scene URL from location.hash
-				location.hash = encodeURIComponent(url);
-				location.reload();
+				const params = new URLSearchParams(location.search);
+				params.set("url", url);
+				// Preserve the hash (camera view matrix) if present
+				location.href = `${location.pathname}?${params.toString()}${location.hash}`;
 			});
 
-			// On page load, sync the dropdown to whatever is in the hash
+			// On page load, sync the dropdown to whatever is in ?url=
 			window.addEventListener("load", () => {
-				const hash = location.hash ? decodeURIComponent(location.hash.substring(1)) : "";
-				if (hash) {
-					// Find the matching option and select it
+				const params = new URLSearchParams(location.search);
+				const currentUrl = params.get("url");
+				if (currentUrl) {
 					for (let opt of select.options) {
-						if (opt.value === hash) {
+						if (opt.value === currentUrl) {
 							opt.selected = true;
 							break;
 						}
